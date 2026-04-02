@@ -28,71 +28,75 @@
     .success.show { display:block; opacity:1; }
     .status-badge { background:#2a2a2a; display:inline-block; padding:6px 14px; border-radius:40px; font-size:0.8rem; margin-bottom:20px; color:#d4af37; }
     hr { border-color:#333; margin:20px 0; }
+    iframe { display: none; }
     @media screen and (max-width:800px) { body { padding:0; align-items:flex-start; } .wrapper { border-radius:0; padding:24px 20px; min-height:100vh; } .grid { grid-template-columns:1fr; gap:10px; } button { width:100%; margin-right:0; margin-bottom:12px; } }
     @media print { body { background:white; } .wrapper { background:white; color:black; } button { display:none; } }
   </style>
 </head>
 <body>
 <div class="wrapper" id="app">
-  <!-- dynamic content will be injected here -->
+  <!-- dynamic content injected here -->
 </div>
 
-<script>
-  // Global variables
-  let contractId = null;
-  let mode = 'model'; // 'model' or 'client'
-  let modelData = null; // for client mode, store model info
+<iframe name="hiddenFrame" id="hiddenFrame" style="display:none;"></iframe>
 
-  // Helper: get URL parameter
+<script>
+  // ==================== CONFIGURATION ====================
+  // 👇 PASTE YOUR APPS SCRIPT WEB APP URL HERE (the one you deployed)
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxd6oBWw7bQ59OFEkMoKMi-EQVWaD_vsk3GJNTE44OMRjHY6Nky6_8sq4UYKDXnS6CgdQ/exec';
+  
+  // Get URL parameters
   function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
   }
 
-  // Load the appropriate view
+  // Global state
+  let currentMode = 'model';     // 'model' or 'client'
+  let currentContractId = null;
+  let modelData = null;
+
+  // Load the appropriate view based on URL parameters
   async function loadView() {
     const idParam = getUrlParam('id');
     const modeParam = getUrlParam('mode');
     
     if (idParam && modeParam === 'client') {
-      mode = 'client';
-      contractId = idParam;
-      // Fetch model data from server
-      await fetchModelData(contractId);
+      currentMode = 'client';
+      currentContractId = idParam;
+      await fetchModelData(idParam);
     } else {
-      mode = 'model';
+      currentMode = 'model';
       renderModelForm();
     }
   }
 
-  // Fetch existing model data for client signing
-  async function fetchModelData(id) {
+  // Fetch model data from Apps Script (GET request)
+  async function fetchModelData(contractId) {
     try {
-      const response = await fetch(google.script.url.getLocation() + '?action=getModelData&id=' + id);
-      // Since we can't use fetch easily with Apps Script HTML service, we use google.script.run
-      google.script.run.withSuccessHandler(function(data) {
-        if (data && data.status === 'success') {
-          modelData = data.data;
-          renderClientForm();
-        } else {
-          document.getElementById('app').innerHTML = '<div class="wrapper"><h2>Invalid or expired link</h2><p>Please contact Dulacka Media for assistance.</p></div>';
-        }
-      }).withFailureHandler(function(err) {
-        document.getElementById('app').innerHTML = '<div class="wrapper"><h2>Error</h2><p>Unable to load agreement. Please try again later.</p></div>';
-      }).getModelData(id);
-    } catch(e) {
-      console.error(e);
+      const response = await fetch(`${APPS_SCRIPT_URL}?action=getModelData&id=${contractId}`);
+      const result = await response.json();
+      if (result.status === 'success') {
+        modelData = result.data;
+        renderClientForm();
+      } else {
+        document.getElementById('app').innerHTML = '<div class="wrapper"><h2>Invalid or expired link</h2><p>Please contact Dulacka Media for assistance.</p></div>';
+      }
+    } catch (err) {
+      console.error(err);
+      document.getElementById('app').innerHTML = '<div class="wrapper"><h2>Error</h2><p>Unable to load agreement. Please try again later.</p></div>';
     }
   }
 
-  // Render model signing form
+  // ==================== MODEL SIGNING VIEW ====================
   function renderModelForm() {
+    const contractID = `DM-${new Date().getFullYear()}${(new Date().getMonth()+1).toString().padStart(2,'0')}${new Date().getDate()}-${new Date().getTime().toString().slice(-4)}`;
+    currentContractId = contractID;
+    
     const html = `
-      <div class="logo-container">
-        <div class="logo">DULACKA MEDIA LLC</div>
-      </div>
+      <div class="logo-container"><div class="logo">DULACKA MEDIA LLC</div></div>
       <h1>Model Release Agreement</h1>
-      <div class="contract-id">New Agreement · <span id="contractID">generating...</span></div>
+      <div class="contract-id">New Agreement · <span id="contractID">${contractID}</span></div>
       <div class="grid">
         <div>
           <h3>1. Scope of Work</h3>
@@ -125,35 +129,19 @@
         <input type="email" id="modelEmail" placeholder="Email Address *">
         <h3>Model Signature</h3>
         <canvas id="signature-pad"></canvas>
-        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
-          <button onclick="clearSignature()">✕ Clear Signature</button>
-          <button onclick="submitModel()">✓ Submit Agreement</button>
-        </div>
+        <div><button onclick="clearSignature()">✕ Clear Signature</button> <button onclick="submitModel()">✓ Submit Agreement</button></div>
       </div>
-      <div id="successMessage" class="success">
-        <h2>Agreement Signed by Model</h2>
-        <p>A confirmation email has been sent to you. The client will now review and countersign. You will receive the final signed copy once completed.</p>
-      </div>
+      <div id="successMessage" class="success"><h2>Agreement Signed by Model</h2><p>A confirmation email has been sent to you. The client will now review and countersign. You will receive the final signed copy once completed.</p></div>
     `;
     document.getElementById('app').innerHTML = html;
-    
-    // Generate contract ID
-    const now = new Date();
-    const contractID = `DM-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate()}-${now.getTime().toString().slice(-4)}`;
-    document.getElementById('contractID').innerText = contractID;
-    window.contractID = contractID;
-    
-    // Setup signature pad
-    setupSignaturePad();
+    setupSignaturePad('signature-pad');
   }
 
-  // Render client signing form (with model info pre-filled)
+  // ==================== CLIENT COUNTERSIGN VIEW ====================
   function renderClientForm() {
     const model = modelData;
     const html = `
-      <div class="logo-container">
-        <div class="logo">DULACKA MEDIA LLC</div>
-      </div>
+      <div class="logo-container"><div class="logo">DULACKA MEDIA LLC</div></div>
       <h1>Model Release Agreement</h1>
       <div class="contract-id">Contract ID: ${model.contractID}</div>
       <div class="status-badge">✓ Signed by Model on ${new Date(model.modelSignedDate).toLocaleString()}</div>
@@ -188,28 +176,20 @@
         <p><strong>Model:</strong> ${model.modelName}<br><strong>Model Email:</strong> ${model.modelEmail}</p>
         <h3>Authorized Signature for Dulacka Media LLC</h3>
         <canvas id="signature-pad"></canvas>
-        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
-          <button onclick="clearSignature()">✕ Clear Signature</button>
-          <button onclick="submitClient()">✓ Countersign Agreement</button>
-        </div>
+        <div><button onclick="clearSignature()">✕ Clear Signature</button> <button onclick="submitClient()">✓ Countersign Agreement</button></div>
       </div>
-      <div id="successMessage" class="success">
-        <h2>Agreement Fully Executed</h2>
-        <p>The signed agreement has been emailed to the model and to Dulacka Media. Thank you.</p>
-      </div>
+      <div id="successMessage" class="success"><h2>Agreement Fully Executed</h2><p>The signed agreement has been emailed to the model and to Dulacka Media. Thank you.</p></div>
     `;
     document.getElementById('app').innerHTML = html;
-    setupSignaturePad();
+    setupSignaturePad('signature-pad');
   }
 
-  // Signature pad logic
+  // ==================== SIGNATURE PAD LOGIC ====================
   let canvas, ctx, drawing = false;
-  function setupSignaturePad() {
-    canvas = document.getElementById('signature-pad');
+  function setupSignaturePad(canvasId) {
+    canvas = document.getElementById(canvasId);
     if (!canvas) return;
     ctx = canvas.getContext('2d');
-    drawing = false;
-    
     function resizeCanvas() {
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width;
@@ -222,7 +202,6 @@
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
-    
     function getCoords(e) {
       const rect = canvas.getBoundingClientRect();
       let cx, cy;
@@ -235,7 +214,6 @@
     function draw(e) { if(!drawing) return; e.preventDefault(); const {x,y}=getCoords(e); ctx.lineTo(x,y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,y); }
     canvas.addEventListener('mousedown',start); canvas.addEventListener('mouseup',stop); canvas.addEventListener('mouseout',stop); canvas.addEventListener('mousemove',draw);
     canvas.addEventListener('touchstart',start,{passive:false}); canvas.addEventListener('touchend',stop); canvas.addEventListener('touchcancel',stop); canvas.addEventListener('touchmove',draw,{passive:false});
-    
     window.clearSignature = function() {
       ctx.clearRect(0,0,canvas.width,canvas.height);
       ctx.fillStyle='#fff';
@@ -244,45 +222,76 @@
     };
   }
 
-  // Submit model signature
+  // ==================== SUBMIT MODEL (using hidden iframe) ====================
   window.submitModel = function() {
     const name = document.getElementById('modelName').value.trim();
     const email = document.getElementById('modelEmail').value.trim();
     if (!name || !email) { alert('Please enter name and email.'); return; }
-    if (canvas.toDataURL().length < 2500) { alert('Please provide your signature.'); return; }
-    
     const signature = canvas.toDataURL();
-    const contractID = window.contractID;
-    
-    google.script.run.withSuccessHandler(function(result) {
-      if (result.status === 'success') {
-        document.getElementById('formSection').style.display = 'none';
-        document.getElementById('successMessage').classList.add('show');
-      } else {
-        alert('Error: ' + result.message);
-      }
-    }).withFailureHandler(function(err) {
-      alert('Network error: ' + err.message);
-    }).submitModelSignature(contractID, name, email, signature);
+    if (signature.length < 2500) { alert('Please provide your signature.'); return; }
+
+    // Build hidden form and submit to Apps Script
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = APPS_SCRIPT_URL;
+    form.target = 'hiddenFrame';
+    form.style.display = 'none';
+    const fields = {
+      action: 'submitModel',
+      contractID: currentContractId,
+      modelName: name,
+      modelEmail: email,
+      modelSignature: signature
+    };
+    for (const [key, val] of Object.entries(fields)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = val;
+      form.appendChild(input);
+    }
+    document.body.appendChild(form);
+    const iframe = document.getElementById('hiddenFrame');
+    iframe.onload = function() {
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('successMessage').classList.add('show');
+      form.remove();
+    };
+    form.submit();
   };
 
-  // Submit client signature
+  // ==================== SUBMIT CLIENT (using hidden iframe) ====================
   window.submitClient = function() {
-    if (canvas.toDataURL().length < 2500) { alert('Please provide your signature.'); return; }
     const signature = canvas.toDataURL();
-    google.script.run.withSuccessHandler(function(result) {
-      if (result.status === 'success') {
-        document.getElementById('formSection').style.display = 'none';
-        document.getElementById('successMessage').classList.add('show');
-      } else {
-        alert('Error: ' + result.message);
-      }
-    }).withFailureHandler(function(err) {
-      alert('Network error: ' + err.message);
-    }).submitClientSignature(contractId, signature);
+    if (signature.length < 2500) { alert('Please provide your signature.'); return; }
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = APPS_SCRIPT_URL;
+    form.target = 'hiddenFrame';
+    form.style.display = 'none';
+    const fields = {
+      action: 'submitClient',
+      contractID: currentContractId,
+      clientSignature: signature
+    };
+    for (const [key, val] of Object.entries(fields)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = val;
+      form.appendChild(input);
+    }
+    document.body.appendChild(form);
+    const iframe = document.getElementById('hiddenFrame');
+    iframe.onload = function() {
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('successMessage').classList.add('show');
+      form.remove();
+    };
+    form.submit();
   };
 
-  // Initialize
+  // Start the app
   loadView();
 </script>
 </body>
