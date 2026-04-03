@@ -42,8 +42,8 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  // 👇 REPLACE WITH YOUR DEPLOYED APPS SCRIPT URL (must end with /exec)
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxntPP5_lZQHl6lk9Ak7QDWeBoOh_WmE0mCezxdBXCEArc7G6n6u8M3FP-cAT9S8R6D1g/exec';
+  // 👇 REPLACE WITH YOUR DEPLOYED APPS SCRIPT URL (after deploying)
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_D2bMrg0rzOZBxbAJu_9to7Rj3Xks-z-1f96u1zKkXLgZ-NStmU5CxMAeKEhP_qguHw/exec';
   
   function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -73,12 +73,10 @@
     const appDiv = document.getElementById('app');
     appDiv.innerHTML = '<div class="wrapper"><h2>Loading agreement...</h2></div>';
     
-    // Create a unique callback name
     const callbackName = 'jsonp_callback_' + Date.now();
     window[callbackName] = function(result) {
       delete window[callbackName];
       document.body.removeChild(script);
-      console.log("JSONP response:", result);
       if (result.status === 'success') {
         modelData = result.data;
         renderClientForm();
@@ -190,7 +188,6 @@
     setupSignaturePad('signature-pad');
   }
 
-  // Signature pad logic (same as before)
   let canvas, ctx, drawing = false;
   function setupSignaturePad(canvasId) {
     canvas = document.getElementById(canvasId);
@@ -228,7 +225,6 @@
     };
   }
 
-  // Submit model using hidden iframe (POST, no CORS)
   window.submitModel = function() {
     const name = document.getElementById('modelName').value.trim();
     const email = document.getElementById('modelEmail').value.trim();
@@ -265,7 +261,6 @@
     form.submit();
   };
 
-  // Submit client using hidden iframe
   window.submitClient = function() {
     const signature = canvas.toDataURL();
     if (signature.length < 2500) { alert('Please provide your signature.'); return; }
@@ -289,19 +284,20 @@
     document.body.appendChild(form);
     const iframe = document.getElementById('hiddenFrame');
     iframe.onload = function() {
-  // Try to read the response from the iframe
-  try {
-    let iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-    let responseText = iframeDoc.body.innerText;
-    if (responseText && responseText.includes("error")) {
-      alert("Server error: " + responseText);
-      return;
-    }
-  } catch(e) { console.log("Cannot read iframe response"); }
-  document.getElementById('formSection').style.display = 'none';
-  document.getElementById('successMessage').classList.add('show');
-  form.remove();
-};
+      try {
+        let iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        let responseText = iframeDoc.body.innerText;
+        if (responseText && responseText.includes("error")) {
+          alert("Server error: " + responseText);
+          return;
+        }
+      } catch(e) { console.log("Cannot read iframe response"); }
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('successMessage').classList.add('show');
+      form.remove();
+    };
+    form.submit();
+  };
 
   loadView();
 </script>
