@@ -16,7 +16,10 @@
     ul { padding-left:1.4rem; }
     .logo-container { text-align:center; margin-bottom:25px; }
     .logo { display:inline-block; max-width:70%; width:220px; border-radius:30px; background:rgba(255,255,255,0.02); padding:6px 0; font-size:1.4rem; font-weight:bold; color:#d4af37; text-decoration:none; }
-    .contract-id { text-align:center; color:#aaa; margin-bottom:40px; border-bottom:1px dashed #333; padding-bottom:18px; }
+    .contract-id { text-align:center; color:#aaa; margin-bottom:30px; border-bottom:1px dashed #333; padding-bottom:18px; }
+    .prepared-header { background: #1a1a1a; padding: 15px 20px; border-radius: 16px; margin-bottom: 30px; border-left: 4px solid #d4af37; }
+    .prepared-header p { margin: 5px 0; color: #eee; }
+    .prepared-header strong { color: #d4af37; }
     .grid { display:grid; grid-template-columns:1fr 1fr; gap:30px 40px; margin-bottom:20px; }
     .form-section { margin-top:30px; border-top:1px solid #333; padding-top:40px; }
     input { width:100%; padding:14px 16px; margin-bottom:18px; background:#1e1e1e; border:1px solid #3a3a3a; border-radius:16px; color:#fff; font-size:1rem; }
@@ -42,8 +45,8 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  // 👇 REPLACE WITH YOUR DEPLOYED APPS SCRIPT URL (after deploying)
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwv4EHKowBJvwpBV3FahmPjJLOqEIe3K0MDCLojvru2IE9anX5AKgKTMyQUcqmvZKlMMw/exec';
+  // 👇 REPLACE WITH YOUR DEPLOYED APPS SCRIPT URL
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJeW8Ifhz72onhodZiCo0KpB_ugF2um05R09HskurVso_VxbaGiLxiJedQM4Y2_alyvg/exec';
   
   function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -100,12 +103,19 @@
     const html = `
       <div class="logo-container"><div class="logo">DULACKA MEDIA LLC</div></div>
       <h1>Model Release Agreement</h1>
-      <div class="contract-id">New Agreement · <span id="contractID">${contractID}</span></div>
+      <div class="contract-id">Contract ID: ${contractID}</div>
+      
+      <!-- Header with Prepared for / Prepared by / Date -->
+      <div class="prepared-header">
+        <p><strong>Prepared for:</strong> <span id="preparedForName">[Model Name]</span></p>
+        <p><strong>Prepared by:</strong> Dulacka Media LLC</p>
+        <p><strong>Date:</strong> April 7, 2026</p>
+      </div>
+      
       <div class="grid">
         <div>
           <h3>1. Scope of Work</h3>
-          <p>Model is to be videoed and photographed by Dulacka Media on Tuesday April 3, 2026, from 11:00 am PDT through 1:00 pm PDT at the M Resort Spa Casino, located at 12300 Las Vegas Blvd S, Henderson, Nevada. The type of video and photography (Content) will be natural, unposed and posed moments of the Model enjoying the M Resort Spa Casino main pool area. Content is intended to be used on M
-Resort Spa Casino social media platforms, website, and digital displays. Model is responsible for hair, makeup, a two-piece black bikini, and appropriate pool area footwear. Model must arrive at the M Resort Spa Casino no later than 10:30 am PDT on Tuesday, April 7, 2026, ready to shoot.</p>
+          <p>Model is to be videoed and photographed by Dulacka Media on Tuesday April 3, 2026, from 11:00 am PDT through 1:00 pm PDT at the M Resort Spa Casino, located at 12300 Las Vegas Blvd S, Henderson, Nevada. The type of video and photography (Content) will be natural, unposed and posed moments of the Model enjoying the M Resort Spa Casino main pool area. Content is intended to be used on M Resort Spa Casino social media platforms, website, and digital displays. Model is responsible for hair, makeup, a two-piece black bikini, and appropriate pool area footwear. Model must arrive at the M Resort Spa Casino no later than 10:30 am PDT on Tuesday, April 7, 2026, ready to shoot.</p>
           <h3>2. Scope of Release</h3>
           <p>Subject only to the restrictions in paragraph 3, below, Model is granting Dulacka Media the unrestricted, irrevocable, and worldwide permission to use and publish the Content in whole or in part, with or without alterations, for any legal purpose, public or private. Model’s payment in exchange for this release is limited to that set forth in this Model Release Agreement and Dulacka Media will not provide any additional compensation to Model based on commercial success of use of any of the content.</p>
           <h3>3. Limitations on Use</h3>
@@ -130,7 +140,7 @@ Resort Spa Casino social media platforms, website, and digital displays. Model i
       </div>
       <div class="form-section" id="formSection">
         <h2>Model Information</h2>
-        <input type="text" id="modelName" placeholder="Full Legal Name *">
+        <input type="text" id="modelName" placeholder="Full Legal Name *" oninput="updatePreparedFor()">
         <input type="email" id="modelEmail" placeholder="Email Address *">
         <h3>Model Signature</h3>
         <canvas id="signature-pad"></canvas>
@@ -140,6 +150,15 @@ Resort Spa Casino social media platforms, website, and digital displays. Model i
     `;
     document.getElementById('app').innerHTML = html;
     setupSignaturePad('signature-pad');
+    
+    // Function to update the header as the user types
+    window.updatePreparedFor = function() {
+      const nameInput = document.getElementById('modelName');
+      const span = document.getElementById('preparedForName');
+      if (nameInput && span) {
+        span.innerText = nameInput.value.trim() || '[Model Name]';
+      }
+    };
   }
 
   function renderClientForm() {
@@ -149,11 +168,17 @@ Resort Spa Casino social media platforms, website, and digital displays. Model i
       <h1>Model Release Agreement</h1>
       <div class="contract-id">Contract ID: ${model.contractID}</div>
       <div class="status-badge">✓ Signed by Model on ${new Date(model.modelSignedDate).toLocaleString()}</div>
+      
+      <div class="prepared-header">
+        <p><strong>Prepared for:</strong> ${model.modelName}</p>
+        <p><strong>Prepared by:</strong> Dulacka Media LLC</p>
+        <p><strong>Date:</strong> April 7, 2026</p>
+      </div>
+      
       <div class="grid">
         <div>
           <h3>1. Scope of Work</h3>
-          <p>Model is to be videoed and photographed by Dulacka Media on Tuesday April 3, 2026, from 11:00 am PDT through 1:00 pm PDT at the M Resort Spa Casino, located at 12300 Las Vegas Blvd S, Henderson, Nevada. The type of video and photography (Content) will be natural, unposed and posed moments of the Model enjoying the M Resort Spa Casino main pool area. Content is intended to be used on M
-Resort Spa Casino social media platforms, website, and digital displays. Model is responsible for hair, makeup, a two-piece black bikini, and appropriate pool area footwear. Model must arrive at the M Resort Spa Casino no later than 11:00 am PDT on Tuesday, April 7, 2026, ready to shoot.</p>
+          <p>Model is to be videoed and photographed by Dulacka Media on Tuesday April 3, 2026, from 11:00 am PDT through 1:00 pm PDT at the M Resort Spa Casino, located at 12300 Las Vegas Blvd S, Henderson, Nevada. The type of video and photography (Content) will be natural, unposed and posed moments of the Model enjoying the M Resort Spa Casino main pool area. Content is intended to be used on M Resort Spa Casino social media platforms, website, and digital displays. Model is responsible for hair, makeup, a two-piece black bikini, and appropriate pool area footwear. Model must arrive at the M Resort Spa Casino no later than 10:30 am PDT on Tuesday, April 7, 2026, ready to shoot.</p>
           <h3>2. Scope of Release</h3>
           <p>Subject only to the restrictions in paragraph 3, below, Model is granting Dulacka Media the unrestricted, irrevocable, and worldwide permission to use and publish the Content in whole or in part, with or without alterations, for any legal purpose, public or private. Model’s payment in exchange for this release is limited to that set forth in this Model Release Agreement and Dulacka Media will not provide any additional compensation to Model based on commercial success of use of any of the content.</p>
           <h3>3. Limitations on Use</h3>
@@ -173,7 +198,7 @@ Resort Spa Casino social media platforms, website, and digital displays. Model i
           <p>Model is a legally competent adult, 18 years of age or older, and has the right to legally enter into this Model Release Agreement.</p>
           <h3>8. Other Terms</h3>
           <p>THE PARTIES HAVE READ AND UNDERSTAND THE TERMS OF THIS MODEL RELEASE AGREEMENT ABOVE AND AGREE THAT IT IS THE ENTIRE AGREEMENT BETWEEN THE PARTIES AS TO THE PHOTOGRAPHY REFERENCED THEREIN.</p>
-          <p><strong>Executed this 7th of April 2026.</strong></p>
+          <p><strong>Executed this 3rd of April 2026.</strong></p>
         </div>
       </div>
       <div class="form-section" id="formSection">
