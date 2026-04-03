@@ -17,9 +17,10 @@
     .logo-container { text-align:center; margin-bottom:25px; }
     .logo { display:inline-block; max-width:70%; width:220px; border-radius:30px; background:rgba(255,255,255,0.02); padding:6px 0; font-size:1.4rem; font-weight:bold; color:#d4af37; text-decoration:none; }
     .contract-id { text-align:center; color:#aaa; margin-bottom:30px; border-bottom:1px dashed #333; padding-bottom:18px; }
-    .prepared-header { background: #1a1a1a; padding: 15px 20px; border-radius: 16px; margin-bottom: 30px; border-left: 4px solid #d4af37; }
+    .prepared-header { background: #1a1a1a; padding: 15px 20px; border-radius: 16px; margin-bottom: 20px; border-left: 4px solid #d4af37; }
     .prepared-header p { margin: 5px 0; color: #eee; }
     .prepared-header strong { color: #d4af37; }
+    .intro-text { margin-bottom: 20px; font-style: italic; color: #ddd; }
     .grid { display:grid; grid-template-columns:1fr 1fr; gap:30px 40px; margin-bottom:20px; }
     .form-section { margin-top:30px; border-top:1px solid #333; padding-top:40px; }
     input { width:100%; padding:14px 16px; margin-bottom:18px; background:#1e1e1e; border:1px solid #3a3a3a; border-radius:16px; color:#fff; font-size:1rem; }
@@ -46,7 +47,7 @@
 <script>
   // ==================== CONFIGURATION ====================
   // 👇 REPLACE WITH YOUR DEPLOYED APPS SCRIPT URL
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJeW8Ifhz72onhodZiCo0KpB_ugF2um05R09HskurVso_VxbaGiLxiJedQM4Y2_alyvg/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlEnvJif1ku7nOLdJgrrQxq9_WzcoWCWN4wVQuLaP34SLzHoSjZpOUGiR6nH-i5p81rg/exec';
   
   function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -105,11 +106,16 @@
       <h1>Model Release Agreement</h1>
       <div class="contract-id">Contract ID: ${contractID}</div>
       
-      <!-- Header with Prepared for / Prepared by / Date -->
+      <!-- Header exactly as requested -->
       <div class="prepared-header">
         <p><strong>Prepared for:</strong> <span id="preparedForName">[Model Name]</span></p>
         <p><strong>Prepared by:</strong> Dulacka Media LLC</p>
-        <p><strong>Date:</strong> April 7, 2026</p>
+        <p><strong>Date:</strong> April 3, 2026</p>
+      </div>
+      
+      <!-- Introductory sentence -->
+      <div class="intro-text">
+        This Model Release Agreement is entered into between Dulacka Media LLC (Dulacka Media) and <span id="introModelName">[Model Name]</span> (Model), effective as of the date of signing this Agreement.
       </div>
       
       <div class="grid">
@@ -140,7 +146,7 @@
       </div>
       <div class="form-section" id="formSection">
         <h2>Model Information</h2>
-        <input type="text" id="modelName" placeholder="Full Legal Name *" oninput="updatePreparedFor()">
+        <input type="text" id="modelName" placeholder="Full Legal Name *" oninput="updateModelName()">
         <input type="email" id="modelEmail" placeholder="Email Address *">
         <h3>Model Signature</h3>
         <canvas id="signature-pad"></canvas>
@@ -151,13 +157,13 @@
     document.getElementById('app').innerHTML = html;
     setupSignaturePad('signature-pad');
     
-    // Function to update the header as the user types
-    window.updatePreparedFor = function() {
+    window.updateModelName = function() {
       const nameInput = document.getElementById('modelName');
-      const span = document.getElementById('preparedForName');
-      if (nameInput && span) {
-        span.innerText = nameInput.value.trim() || '[Model Name]';
-      }
+      const name = nameInput.value.trim();
+      const preparedSpan = document.getElementById('preparedForName');
+      const introSpan = document.getElementById('introModelName');
+      if (preparedSpan) preparedSpan.innerText = name || '[Model Name]';
+      if (introSpan) introSpan.innerText = name || '[Model Name]';
     };
   }
 
@@ -172,7 +178,11 @@
       <div class="prepared-header">
         <p><strong>Prepared for:</strong> ${model.modelName}</p>
         <p><strong>Prepared by:</strong> Dulacka Media LLC</p>
-        <p><strong>Date:</strong> April 7, 2026</p>
+        <p><strong>Date:</strong> April 3, 2026</p>
+      </div>
+      
+      <div class="intro-text">
+        This Model Release Agreement is entered into between Dulacka Media LLC (Dulacka Media) and ${model.modelName} (Model), effective as of the date of signing this Agreement.
       </div>
       
       <div class="grid">
