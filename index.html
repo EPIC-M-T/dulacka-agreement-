@@ -43,7 +43,7 @@
 <script>
   // ==================== CONFIGURATION ====================
   // 👇 REPLACE WITH YOUR DEPLOYED APPS SCRIPT URL (after deploying)
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-cKilAEA50wLhJ5UFUGhZIKRUTCqVL97iKpP8bmi_YLsyMPHfMjew9PqY6ZfAn_kZnA/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFDq0-Z04Dc72wlN-IR_qWlRdUikRe9Dp1m8n4jwtiOMBt-W40V6VAhS-RpgYiTAN7oA/exec';
   
   function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -68,7 +68,6 @@
     }
   }
 
-  // JSONP fetch (no CORS)
   function fetchModelDataJSONP(contractId) {
     const appDiv = document.getElementById('app');
     appDiv.innerHTML = '<div class="wrapper"><h2>Loading agreement...</h2></div>';
