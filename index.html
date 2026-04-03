@@ -43,7 +43,7 @@
 <script>
   // ==================== CONFIGURATION ====================
   // 👇 REPLACE WITH YOUR DEPLOYED APPS SCRIPT URL (after deploying)
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_D2bMrg0rzOZBxbAJu_9to7Rj3Xks-z-1f96u1zKkXLgZ-NStmU5CxMAeKEhP_qguHw/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-cKilAEA50wLhJ5UFUGhZIKRUTCqVL97iKpP8bmi_YLsyMPHfMjew9PqY6ZfAn_kZnA/exec';
   
   function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -254,6 +254,15 @@
     document.body.appendChild(form);
     const iframe = document.getElementById('hiddenFrame');
     iframe.onload = function() {
+      try {
+        let iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        let responseText = iframeDoc.body.innerText;
+        if (responseText && responseText.startsWith("ERROR:")) {
+          alert("Server error:\n" + responseText);
+          form.remove();
+          return;
+        }
+      } catch(e) { console.log("Cannot read iframe response", e); }
       document.getElementById('formSection').style.display = 'none';
       document.getElementById('successMessage').classList.add('show');
       form.remove();
@@ -287,11 +296,12 @@
       try {
         let iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
         let responseText = iframeDoc.body.innerText;
-        if (responseText && responseText.includes("error")) {
-          alert("Server error: " + responseText);
+        if (responseText && responseText.startsWith("ERROR:")) {
+          alert("Server error:\n" + responseText);
+          form.remove();
           return;
         }
-      } catch(e) { console.log("Cannot read iframe response"); }
+      } catch(e) { console.log("Cannot read iframe response", e); }
       document.getElementById('formSection').style.display = 'none';
       document.getElementById('successMessage').classList.add('show');
       form.remove();
