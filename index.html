@@ -289,12 +289,19 @@
     document.body.appendChild(form);
     const iframe = document.getElementById('hiddenFrame');
     iframe.onload = function() {
-      document.getElementById('formSection').style.display = 'none';
-      document.getElementById('successMessage').classList.add('show');
-      form.remove();
-    };
-    form.submit();
-  };
+  // Try to read the response from the iframe
+  try {
+    let iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    let responseText = iframeDoc.body.innerText;
+    if (responseText && responseText.includes("error")) {
+      alert("Server error: " + responseText);
+      return;
+    }
+  } catch(e) { console.log("Cannot read iframe response"); }
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('successMessage').classList.add('show');
+  form.remove();
+};
 
   loadView();
 </script>
