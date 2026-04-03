@@ -42,8 +42,8 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  // 👇 REPLACE WITH YOUR ACTUAL DEPLOYED APPS SCRIPT URL (must end with /exec)
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz85H2-7BwG9hMmbj7ofDxDz7pEoGOeLJ7VnxYdOr19RdkqFdGvruaAftm9MROZ6LozsQ/exec';
+  // 👇 REPLACE WITH YOUR DEPLOYED APPS SCRIPT URL (must end with /exec)
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyRJQQqsvIFYHnNnQ8B05dwM6SNuOQM-5NHp0TkHQ27TT-zhINEvVZQDuNvMO81WHp3Q/exec';
   
   function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -61,32 +61,40 @@
     if (idParam && modeParam === 'client') {
       currentMode = 'client';
       currentContractId = idParam;
-      await fetchModelData(idParam);
+      await fetchModelDataJSONP(idParam);
     } else {
       currentMode = 'model';
       renderModelForm();
     }
   }
 
-  async function fetchModelData(contractId) {
+  // JSONP fetch (no CORS)
+  function fetchModelDataJSONP(contractId) {
     const appDiv = document.getElementById('app');
     appDiv.innerHTML = '<div class="wrapper"><h2>Loading agreement...</h2></div>';
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=getModelData&id=${encodeURIComponent(contractId)}`;
-      console.log("Fetching:", url);
-      const response = await fetch(url);
-      const result = await response.json();
-      console.log("Response:", result);
+    
+    // Create a unique callback name
+    const callbackName = 'jsonp_callback_' + Date.now();
+    window[callbackName] = function(result) {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      console.log("JSONP response:", result);
       if (result.status === 'success') {
         modelData = result.data;
         renderClientForm();
       } else {
         appDiv.innerHTML = `<div class="wrapper"><div class="error-message">Error: ${result.message || 'Invalid or expired link'}</div><p>Please contact Dulacka Media for assistance.</p></div>`;
       }
-    } catch (err) {
-      console.error(err);
-      appDiv.innerHTML = `<div class="wrapper"><div class="error-message">Network error: ${err.message}</div><p>Please check your connection and try again.</p></div>`;
-    }
+    };
+    
+    const url = `${APPS_SCRIPT_URL}?action=getModelData&id=${encodeURIComponent(contractId)}&callback=${callbackName}`;
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = function() {
+      appDiv.innerHTML = `<div class="wrapper"><div class="error-message">Network error loading agreement. Please try again later.</div></div>`;
+      delete window[callbackName];
+    };
+    document.body.appendChild(script);
   }
 
   function renderModelForm() {
@@ -182,7 +190,7 @@
     setupSignaturePad('signature-pad');
   }
 
-  // Signature pad logic
+  // Signature pad logic (same as before)
   let canvas, ctx, drawing = false;
   function setupSignaturePad(canvasId) {
     canvas = document.getElementById(canvasId);
@@ -220,7 +228,7 @@
     };
   }
 
-  // Submit model using hidden iframe
+  // Submit model using hidden iframe (POST, no CORS)
   window.submitModel = function() {
     const name = document.getElementById('modelName').value.trim();
     const email = document.getElementById('modelEmail').value.trim();
