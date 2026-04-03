@@ -27,36 +27,33 @@
     .success { display:none; opacity:0; margin-top:50px; padding:40px 30px; background:#121212; border:1px solid #d4af37; border-radius:40px; text-align:center; }
     .success.show { display:block; opacity:1; }
     .status-badge { background:#2a2a2a; display:inline-block; padding:6px 14px; border-radius:40px; font-size:0.8rem; margin-bottom:20px; color:#d4af37; }
-    hr { border-color:#333; margin:20px 0; }
     iframe { display: none; }
+    .error-message { color: #ff8888; background: #330000; padding: 15px; border-radius: 12px; margin: 20px 0; }
     @media screen and (max-width:800px) { body { padding:0; align-items:flex-start; } .wrapper { border-radius:0; padding:24px 20px; min-height:100vh; } .grid { grid-template-columns:1fr; gap:10px; } button { width:100%; margin-right:0; margin-bottom:12px; } }
     @media print { body { background:white; } .wrapper { background:white; color:black; } button { display:none; } }
   </style>
 </head>
 <body>
 <div class="wrapper" id="app">
-  <!-- dynamic content injected here -->
+  <!-- dynamic content -->
 </div>
 
 <iframe name="hiddenFrame" id="hiddenFrame" style="display:none;"></iframe>
 
 <script>
   // ==================== CONFIGURATION ====================
-  // 👇 PASTE YOUR APPS SCRIPT WEB APP URL HERE (the one you deployed)
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9qPrGfEN4Qdye17llt31fnIIK4E385oHKMOs3nICVNic8I0ne86oVezbdML8rJKBtIQ/exec';
+  // 👇 REPLACE WITH YOUR ACTUAL DEPLOYED APPS SCRIPT URL (must end with /exec)
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz85H2-7BwG9hMmbj7ofDxDz7pEoGOeLJ7VnxYdOr19RdkqFdGvruaAftm9MROZ6LozsQ/exec';
   
-  // Get URL parameters
   function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
   }
 
-  // Global state
-  let currentMode = 'model';     // 'model' or 'client'
+  let currentMode = 'model';
   let currentContractId = null;
   let modelData = null;
 
-  // Load the appropriate view based on URL parameters
   async function loadView() {
     const idParam = getUrlParam('id');
     const modeParam = getUrlParam('mode');
@@ -71,28 +68,30 @@
     }
   }
 
-  // Fetch model data from Apps Script (GET request)
   async function fetchModelData(contractId) {
+    const appDiv = document.getElementById('app');
+    appDiv.innerHTML = '<div class="wrapper"><h2>Loading agreement...</h2></div>';
     try {
-      const response = await fetch(`${APPS_SCRIPT_URL}?action=getModelData&id=${contractId}`);
+      const url = `${APPS_SCRIPT_URL}?action=getModelData&id=${encodeURIComponent(contractId)}`;
+      console.log("Fetching:", url);
+      const response = await fetch(url);
       const result = await response.json();
+      console.log("Response:", result);
       if (result.status === 'success') {
         modelData = result.data;
         renderClientForm();
       } else {
-        document.getElementById('app').innerHTML = '<div class="wrapper"><h2>Invalid or expired link</h2><p>Please contact Dulacka Media for assistance.</p></div>';
+        appDiv.innerHTML = `<div class="wrapper"><div class="error-message">Error: ${result.message || 'Invalid or expired link'}</div><p>Please contact Dulacka Media for assistance.</p></div>`;
       }
     } catch (err) {
       console.error(err);
-      document.getElementById('app').innerHTML = '<div class="wrapper"><h2>Error</h2><p>Unable to load agreement. Please try again later.</p></div>';
+      appDiv.innerHTML = `<div class="wrapper"><div class="error-message">Network error: ${err.message}</div><p>Please check your connection and try again.</p></div>`;
     }
   }
 
-  // ==================== MODEL SIGNING VIEW ====================
   function renderModelForm() {
     const contractID = `DM-${new Date().getFullYear()}${(new Date().getMonth()+1).toString().padStart(2,'0')}${new Date().getDate()}-${new Date().getTime().toString().slice(-4)}`;
     currentContractId = contractID;
-    
     const html = `
       <div class="logo-container"><div class="logo">DULACKA MEDIA LLC</div></div>
       <h1>Model Release Agreement</h1>
@@ -137,7 +136,6 @@
     setupSignaturePad('signature-pad');
   }
 
-  // ==================== CLIENT COUNTERSIGN VIEW ====================
   function renderClientForm() {
     const model = modelData;
     const html = `
@@ -184,7 +182,7 @@
     setupSignaturePad('signature-pad');
   }
 
-  // ==================== SIGNATURE PAD LOGIC ====================
+  // Signature pad logic
   let canvas, ctx, drawing = false;
   function setupSignaturePad(canvasId) {
     canvas = document.getElementById(canvasId);
@@ -222,7 +220,7 @@
     };
   }
 
-  // ==================== SUBMIT MODEL (using hidden iframe) ====================
+  // Submit model using hidden iframe
   window.submitModel = function() {
     const name = document.getElementById('modelName').value.trim();
     const email = document.getElementById('modelEmail').value.trim();
@@ -230,7 +228,6 @@
     const signature = canvas.toDataURL();
     if (signature.length < 2500) { alert('Please provide your signature.'); return; }
 
-    // Build hidden form and submit to Apps Script
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = APPS_SCRIPT_URL;
@@ -260,7 +257,7 @@
     form.submit();
   };
 
-  // ==================== SUBMIT CLIENT (using hidden iframe) ====================
+  // Submit client using hidden iframe
   window.submitClient = function() {
     const signature = canvas.toDataURL();
     if (signature.length < 2500) { alert('Please provide your signature.'); return; }
@@ -291,7 +288,6 @@
     form.submit();
   };
 
-  // Start the app
   loadView();
 </script>
 </body>
